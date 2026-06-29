@@ -14,7 +14,7 @@ timeout = 10.
 
 dump_json = lambda o: json.dumps(o, separators=(',', ':'))
 rand_num_str = lambda l: str(int(random.random() * (10 ** l)))
-out_array = lambda a: a if len(a) > 1 else out_array(a[0])
+out_array = lambda a: a if len(a) != 1 else (out_array(a[0]) if isinstance(a[0], list) and len(a[0]) > 0 else a)
 
 def __batch_exec(envelopes):
     envs = envelopes if isinstance(envelopes, list) else [envelopes]
@@ -62,28 +62,38 @@ def parse_datetime(i):
     return datetime.datetime(*arr)
 
 
+def _safe_get(lst, idx, default=None):
+    return lst[idx] if idx < len(lst) else default
+
+
 def parse_detail(i):
     if i is None or len(i) < 5 or i[4] is None:
         return None
+    trading = parse_trading(_safe_get(i, 5))
+    extended_trading = parse_trading(_safe_get(i, 16))
+    update_ts = _safe_get(i, 11)
+    last_ts = _safe_get(i, 17)
+    extended_ts = _safe_get(i, 18)
+    trading_window = _safe_get(i, 19)
     return {
         'inner_id': i[0],
         'code': i[1][0],
         'market': i[1][1] if len(i[1]) > 1 else None,
         'name': i[2],
         'currency': i[4],
-        'trading': parse_trading(i[5]),
-        'last_close': i[7],
-        'region': i[9],
+        'trading': trading,
+        'last_close': _safe_get(i, 7),
+        'region': _safe_get(i, 9),
         # 10?
-        'update_timestamp': i[11][0],
-        'timezone': i[12],
-        'timezone_offset': i[13],
-        'extended_trading': parse_trading(i[16]),
-        'last_timestamp': i[17][0],
-        'extended_timestamp': None if i[18] is None else i[18][0],
-        'start_trading_dt': None if i[19] is None else parse_datetime(i[19][0][1]),
-        'end_trading_dt': None if i[19] is None else parse_datetime(i[19][0][2]),
-        'full_ticker': i[21]
+        'update_timestamp': update_ts[0] if update_ts else None,
+        'timezone': _safe_get(i, 12),
+        'timezone_offset': _safe_get(i, 13),
+        'extended_trading': extended_trading,
+        'last_timestamp': last_ts[0] if last_ts else None,
+        'extended_timestamp': None if extended_ts is None else extended_ts[0],
+        'start_trading_dt': None if trading_window is None else parse_datetime(trading_window[0][1]),
+        'end_trading_dt': None if trading_window is None else parse_datetime(trading_window[0][2]),
+        'full_ticker': _safe_get(i, 21) or (i[1][1] + ':' + i[1][0] if len(i[1]) > 1 else i[1][0])
     }
 
 
@@ -94,10 +104,33 @@ def search(kw):
 
 
 def lists_detail(ids):
-    rsp = out_array(__batch_exec([{'id': 'xh8wxf', 'data': [[[None, i.split(':')]], True, False]} for i in ids]))
-    if isinstance(rsp[0], str):
+    # xh8wxf endpoint is deprecated, use mKsvE (search) instead
+    envelopes = [{'id': 'mKsvE', 'data': [ticker_id, [], True, True]} for ticker_id in ids]
+    rsp = __batch_exec(envelopes)
+
+    # Single id: response is [search_results, ...], not a list of responses
+    if len(ids) == 1:
         rsp = [rsp]
-    return [parse_detail(out_array(e)) for e in rsp]
+
+    results = []
+    for idx, r in enumerate(rsp):
+        target_id = ids[idx]
+        # Each search response format: [[result1, result2, ...], null, null, ...]
+        search_list = r[0] if isinstance(r, list) and len(r) > 0 and isinstance(r[0], list) else []
+        # Find exact match by full_ticker (e[21] == 'CODE:MARKET')
+        found = None
+        for e in search_list:
+            if isinstance(e, list) and len(e) > 3 and isinstance(e[3], list):
+                if _safe_get(e[3], 21) == target_id:
+                    found = e[3]
+                    break
+        # Fallback to first result if no exact match
+        if found is None and len(search_list) > 0:
+            first = search_list[0]
+            if isinstance(first, list) and len(first) > 3 and isinstance(first[3], list):
+                found = first[3]
+        results.append(parse_detail(found))
+    return results
 
 
 def lists_simple(ids):
