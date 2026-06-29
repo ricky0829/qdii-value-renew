@@ -25,7 +25,7 @@ setup(
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
     ],
-    url='https://github.com/xiaopc/qdii-value',
+    url='https://github.com/ricky0829/qdii-value-renew',
     author='xiaopc',
     author_email='i@xpc.im',
     license='MIT',
@@ -45,7 +45,7 @@ setup(
     install_requires=requires,
     entry_points={
         'console_scripts': [
-            'qdii-value=qdii_value.app:main'
+            'qdii-value-renew=qdii_value.app:main'
         ]
     }
 )
