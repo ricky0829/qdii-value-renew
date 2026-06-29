@@ -10,7 +10,7 @@ with open(join(dirname(__file__), 'VERSION'), 'rb') as f:
     version = f.read().decode('utf8').strip()
 
 setup(
-    name='qdii_value',
+    name='qdii_value_renew',
     version=version,
     description='计算 QDII 基金估值',
     classifiers=[
@@ -30,14 +30,14 @@ setup(
     author_email='i@xpc.im',
     license='MIT',
     packages=[
-        'qdii_value',
-        'qdii_value.cli',
-        'qdii_value.provider',
-        'qdii_value.provider.equity',
-        'qdii_value.provider.fund',
+        'qdii_value_renew',
+        'qdii_value_renew.cli',
+        'qdii_value_renew.provider',
+        'qdii_value_renew.provider.equity',
+        'qdii_value_renew.provider.fund',
     ],
     package_data={
-        'qdii_value.provider.equity': ['*.js'],
+        'qdii_value_renew.provider.equity': ['*.js'],
     },
     platforms='any',
     zip_safe=False,
@@ -45,7 +45,7 @@ setup(
     install_requires=requires,
     entry_points={
         'console_scripts': [
-            'qdii-value-renew=qdii_value.app:main'
+            'qdii-value-renew=qdii_value_renew.app:main'
         ]
     }
 )
