@@ -36,6 +36,9 @@ setup(
         'qdii_value.provider.equity',
         'qdii_value.provider.fund',
     ],
+    package_data={
+        'qdii_value.provider.equity': ['*.js'],
+    },
     platforms='any',
     zip_safe=False,
     python_requires='>=3.6',
