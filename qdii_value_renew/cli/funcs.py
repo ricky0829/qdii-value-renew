@@ -13,6 +13,69 @@ from provider.fund import *
 from confs import Config
 
 
+# 地区名称 -> 旗帜 emoji 映射
+REGION_EMOJI = {
+    # 亚洲
+    '中国': '🇨🇳', '中国大陆': '🇨🇳', '中國': '🇨🇳', 'China': '🇨🇳',
+    '香港': '🇭🇰', 'Hong Kong': '🇭🇰', 'HK': '🇭🇰',
+    '台湾': '🇹🇼', '台灣': '🇹🇼', 'Taiwan': '🇹🇼', 'TW': '🇹🇼',
+    '日本': '🇯🇵', 'Japan': '🇯🇵', 'JP': '🇯🇵',
+    '韩国': '🇰🇷', '南韓': '🇰🇷', 'Korea': '🇰🇷', 'South Korea': '🇰🇷', 'KR': '🇰🇷',
+    '印度': '🇮🇳', 'India': '🇮🇳', 'IN': '🇮🇳',
+    '新加坡': '🇸🇬', 'Singapore': '🇸🇬', 'SG': '🇸🇬',
+    '泰国': '🇹🇭', 'Thailand': '🇹🇭', 'TH': '🇹🇭',
+    '马来西亚': '🇲🇾', 'Malaysia': '🇲🇾', 'MY': '🇲🇾',
+    '越南': '🇻🇳', 'Vietnam': '🇻🇳', 'VN': '🇻🇳',
+    '印尼': '🇮🇩', '印度尼西亚': '🇮🇩', 'Indonesia': '🇮🇩', 'ID': '🇮🇩',
+    '菲律宾': '🇵🇭', 'Philippines': '🇵🇭', 'PH': '🇵🇭',
+    # 欧洲
+    '英国': '🇬🇧', 'United Kingdom': '🇬🇧', 'UK': '🇬🇧', 'GB': '🇬🇧',
+    '法国': '🇫🇷', 'France': '🇫🇷', 'FR': '🇫🇷',
+    '德国': '🇩🇪', 'Germany': '🇩🇪', 'DE': '🇩🇪',
+    '瑞士': '🇨🇭', 'Switzerland': '🇨🇭', 'CH': '🇨🇭',
+    '荷兰': '🇳🇱', 'Netherlands': '🇳🇱', 'NL': '🇳🇱',
+    '瑞典': '🇸🇪', 'Sweden': '🇸🇪', 'SE': '🇸🇪',
+    '丹麦': '🇩🇰', 'Denmark': '🇩🇰', 'DK': '🇩🇰',
+    '挪威': '🇳🇴', 'Norway': '🇳🇴', 'NO': '🇳🇴',
+    '芬兰': '🇫🇮', 'Finland': '🇫🇮', 'FI': '🇫🇮',
+    '西班牙': '🇪🇸', 'Spain': '🇪🇸', 'ES': '🇪🇸',
+    '意大利': '🇮🇹', 'Italy': '🇮🇹', 'IT': '🇮🇹',
+    '爱尔兰': '🇮🇪', 'Ireland': '🇮🇪', 'IE': '🇮🇪',
+    '比利时': '🇧🇪', 'Belgium': '🇧🇪', 'BE': '🇧🇪',
+    '奥地利': '🇦🇹', 'Austria': '🇦🇹', 'AT': '🇦🇹',
+    '葡萄牙': '🇵🇹', 'Portugal': '🇵🇹', 'PT': '🇵🇹',
+    '波兰': '🇵🇱', 'Poland': '🇵🇱', 'PL': '🇵🇱',
+    # 美洲
+    '美国': '🇺🇸', 'United States': '🇺🇸', 'US': '🇺🇸', 'USA': '🇺🇸',
+    '加拿大': '🇨🇦', 'Canada': '🇨🇦', 'CA': '🇨🇦',
+    '墨西哥': '🇲🇽', 'Mexico': '🇲🇽', 'MX': '🇲🇽',
+    '巴西': '🇧🇷', 'Brazil': '🇧🇷', 'BR': '🇧🇷',
+    # 大洋洲
+    '澳大利亚': '🇦🇺', 'Australia': '🇦🇺', 'AU': '🇦🇺',
+    '新西兰': '🇳🇿', 'New Zealand': '🇳🇿', 'NZ': '🇳🇿',
+    # 中东/非洲
+    '以色列': '🇮🇱', 'Israel': '🇮🇱', 'IL': '🇮🇱',
+    '南非': '🇿🇦', 'South Africa': '🇿🇦', 'ZA': '🇿🇦',
+    '沙特': '🇸🇦', '沙特阿拉伯': '🇸🇦', 'Saudi Arabia': '🇸🇦', 'SA': '🇸🇦',
+    '阿联酋': '🇦🇪', 'UAE': '🇦🇪', 'AE': '🇦🇪',
+    # 其他
+    '俄罗斯': '🇷🇺', 'Russia': '🇷🇺', 'RU': '🇷🇺',
+    '土耳其': '🇹🇷', 'Turkey': '🇹🇷', 'TR': '🇹🇷',
+}
+
+
+def add_region_emoji(equities):
+    """为持仓列表中每个条目根据 location 字段在 name 前添加地区旗帜 emoji"""
+    for e in equities:
+        location = e.get('location', '').strip()
+        if not location:
+            continue
+        emoji = REGION_EMOJI.get(location)
+        if emoji and not e['name'].startswith(emoji):
+            e['name'] = emoji + e['name']
+    return equities
+
+
 CUR_EQ_PROVIDER = EQUITY_PROVIDER[0]
 INQUIRER_THEME = inquirer.themes.load_theme_from_dict({
     "List": {
