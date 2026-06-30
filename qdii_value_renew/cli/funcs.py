@@ -163,9 +163,17 @@ def add_region_emoji(equities):
     优先级： location 字段 > source_id 交易所推断
     """
     for e in equities:
-        # 已有 emoji 则幂等跳过（判断条目名称首个字符是否为旗帜 emoji 区间）
-        if e.get('name') and ord(e['name'][0]) >= 0x1F1E0:
+        name = e.get('name', '')
+        if not name:
             continue
+        # 如果已有旗帜 emoji 且后面正确跟了空格，幂等跳过
+        if ord(name[0]) >= 0x1F1E0 and len(name) > 1 and name[1] == ' ':
+            continue
+        # 如果已有旗帜 emoji 但没有空格（旧格式），将其带旗帜部分先剥除
+        # 旗帜 emoji 由两个 Unicode 字符组成（地区指示符 0x1F1E6-0x1F1FF 对）
+        if ord(name[0]) >= 0x1F1E0:
+            name = name[2:].lstrip()  # 剔除前两个地区指示符及可能残留的空格
+            e['name'] = name
         emoji = None
         # 1. 优先从 location 字段匹配
         location = e.get('location', '').strip()
