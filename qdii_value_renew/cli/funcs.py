@@ -175,7 +175,7 @@ def add_region_emoji(equities):
         if not emoji:
             emoji = _get_emoji_from_source_id(e.get('source_id', ''))
         if emoji:
-            e['name'] = emoji + e['name']
+            e['name'] = emoji + ' ' + e['name']
     return equities
 
 
