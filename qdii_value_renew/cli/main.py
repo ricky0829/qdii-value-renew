@@ -123,6 +123,12 @@ class ListingState(State):
 
         if len(FUND_CONF.data['equities']) == 0:
             raise UserWarning("没有添加任何持仓")
+        # 无论是否经过更新流程，都补全地区 emoji（对已有 emoji 的条目幂等）
+        names_before = [e['name'] for e in FUND_CONF.data['equities']]
+        add_region_emoji(FUND_CONF.data['equities'])
+        names_after = [e['name'] for e in FUND_CONF.data['equities']]
+        if names_before != names_after:
+            FUND_CONF.save(FUND_CONF_PATH.format(FUND_ID.translate(TRANS_TABLE)))
         if ARGS.history:
             history_csv(FUND_ID.translate(TRANS_TABLE) + f'_{ARGS.history}d.csv', FUND_CONF, ARGS.history)
         elif ARGS.csv:
