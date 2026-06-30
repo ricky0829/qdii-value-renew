@@ -64,14 +64,117 @@ REGION_EMOJI = {
 }
 
 
+# 交易所后缀 -> 旗帜 emoji 映射
+# 格式支持： gfinance 的 CODE:EXCHANGE, yahootw 的 CODE.SUFFIX
+EXCHANGE_EMOJI = {
+    # 香港
+    'HKG': '🇭🇰', 'HKE': '🇭🇰', 'HKSE': '🇭🇰',
+    # 日本
+    'TYO': '🇯🇵', 'JPX': '🇯🇵', 'TSE': '🇯🇵', 'OSA': '🇯🇵',
+    # 韩国
+    'KRX': '🇰🇷', 'KSC': '🇰🇷', 'KOE': '🇰🇷', 'KOSDAQ': '🇰🇷',
+    # 台湾
+    'TPE': '🇹🇼', 'TWSE': '🇹🇼', 'TWO': '🇹🇼',
+    # 中国大陆
+    'SHA': '🇨🇳', 'SHE': '🇨🇳', 'SHG': '🇨🇳',
+    # 美国
+    'NASDAQ': '🇺🇸', 'NYSE': '🇺🇸', 'AMEX': '🇺🇸', 'NYSEARCA': '🇺🇸',
+    'BATS': '🇺🇸', 'OTCMKTS': '🇺🇸', 'NYSEAMERICAN': '🇺🇸',
+    # 英国
+    'LON': '🇬🇧', 'LSE': '🇬🇧',
+    # 德国
+    'ETR': '🇩🇪', 'FRA': '🇩🇪', 'XETRA': '🇩🇪',
+    # 法国
+    'EPA': '🇫🇷', 'PAR': '🇫🇷',
+    # 瑞士
+    'SWX': '🇨🇭', 'VTX': '🇨🇭',
+    # 荷兰
+    'AMS': '🇳🇱', 'EBR': '🇳🇱',
+    # 瑞典
+    'STO': '🇸🇪',
+    # 丹麦
+    'CPH': '🇩🇰',
+    # 挪威
+    'OSL': '🇳🇴',
+    # 芬兰
+    'HEL': '🇫🇮',
+    # 西班牙
+    'BME': '🇪🇸',
+    # 意大利
+    'BIT': '🇮🇹', 'MIL': '🇮🇹',
+    # 澳大利亚
+    'ASX': '🇦🇺',
+    # 加拿大
+    'TSX': '🇨🇦', 'CVE': '🇨🇦', 'CNQ': '🇨🇦',
+    # 印度
+    'NSE': '🇮🇳', 'BSE': '🇮🇳',
+    # 新加坡
+    'SGX': '🇸🇬',
+    # 南非
+    'JSE': '🇿🇦',
+    # 巴西
+    'BVMF': '🇧🇷', 'SAO': '🇧🇷',
+    # 以色列
+    'TLV': '🇮🇱',
+    # 沙特
+    'SAU': '🇸🇦', 'TADAWUL': '🇸🇦',
+    # 阿联酋
+    'DFM': '🇦🇪', 'ADX': '🇦🇪',
+    # 泰国
+    'SET': '🇹🇭', 'BKK': '🇹🇭',
+    # 马来西亚
+    'KLSE': '🇲🇾', 'KLS': '🇲🇾',
+    # 印尼
+    'IDX': '🇮🇩', 'JKT': '🇮🇩',
+    # 越南
+    'HOSE': '🇻🇳', 'HNX': '🇻🇳',
+}
+
+
+def _get_emoji_from_source_id(source_id):
+    """从 source_id 推断地区 emoji，支持 CODE:EXCHANGE 和 CODE.SUFFIX 格式"""
+    if not source_id:
+        return None
+    # gfinance 格式: CODE:EXCHANGE
+    if ':' in source_id:
+        exchange = source_id.split(':')[-1].upper()
+        return EXCHANGE_EMOJI.get(exchange)
+    # yahootw/yahoo 格式: CODE.SUFFIX
+    if '.' in source_id:
+        suffix = source_id.split('.')[-1].upper()
+        # Yahoo 常见后缀到交易所映射
+        yahoo_suffix_map = {
+            'HK': 'HKG', 'T': 'TYO', 'KS': 'KRX', 'KQ': 'KRX',
+            'TW': 'TPE', 'TWO': 'TWO', 'SS': 'SHA', 'SZ': 'SHE',
+            'L': 'LON', 'DE': 'ETR', 'PA': 'EPA', 'SW': 'SWX',
+            'AS': 'AMS', 'ST': 'STO', 'CO': 'CPH', 'OL': 'OSL',
+            'HE': 'HEL', 'MC': 'BME', 'MI': 'BIT', 'AX': 'ASX',
+            'TO': 'TSX', 'V': 'CVE', 'NS': 'NSE', 'BO': 'BSE',
+            'SI': 'SGX', 'JO': 'JSE', 'SA': 'SAO', 'TA': 'TLV',
+            'BK': 'BKK', 'KL': 'KLSE', 'JK': 'IDX', 'VN': 'HOSE',
+        }
+        exchange = yahoo_suffix_map.get(suffix)
+        return EXCHANGE_EMOJI.get(exchange) if exchange else None
+    return None
+
+
 def add_region_emoji(equities):
-    """为持仓列表中每个条目根据 location 字段在 name 前添加地区旗帜 emoji"""
+    """为持仓列表中每个条目在 name 前添加地区旗帜 emoji。
+    优先级： location 字段 > source_id 交易所推断
+    """
     for e in equities:
-        location = e.get('location', '').strip()
-        if not location:
+        # 已有 emoji 则幂等跳过（判断条目名称首个字符是否为旗帜 emoji 区间）
+        if e.get('name') and ord(e['name'][0]) >= 0x1F1E0:
             continue
-        emoji = REGION_EMOJI.get(location)
-        if emoji and not e['name'].startswith(emoji):
+        emoji = None
+        # 1. 优先从 location 字段匹配
+        location = e.get('location', '').strip()
+        if location:
+            emoji = REGION_EMOJI.get(location)
+        # 2. 备用：从 source_id 交易所推断
+        if not emoji:
+            emoji = _get_emoji_from_source_id(e.get('source_id', ''))
+        if emoji:
             e['name'] = emoji + e['name']
     return equities
 
