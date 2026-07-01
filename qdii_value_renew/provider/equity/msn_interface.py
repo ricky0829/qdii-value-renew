@@ -38,16 +38,26 @@ def realtime(ids):
     if res is None or len(res) == 0:
         return None
     res = res if len(res) > 1 else [res]
-    return [{
-        'source_id': i[0]['instrumentId'],
-        'source_name': getattr(getattr(i[0], 'localizedAttributes', None), 'zh-cn', i[0])['displayName'],
-        'last': i[0]['price'],
-        'change': i[0]['priceChange'],
-        'change_percent': i[0]['priceChangePercent'],
-        'volume': getattr(i[0], 'accumulatedVolume', None),
-        'is_open': (parse_utc_str(i[0]['timeLastUpdated']) + timedelta(minutes=5)) > datetime.now(tz_sh),
-        'time': parse_utc_str(i[0]['timeLastTraded'])
-    } for i in res]
+    out = []
+    for i in res:
+        # 某些返回项可能缺少字段（如 instrumentId/price），跳过无效项
+        try:
+            item = i[0]
+            if 'instrumentId' not in item or 'price' not in item:
+                continue
+            out.append({
+                'source_id': item['instrumentId'],
+                'source_name': getattr(getattr(item, 'localizedAttributes', None), 'zh-cn', item)['displayName'],
+                'last': item['price'],
+                'change': item['priceChange'],
+                'change_percent': item['priceChangePercent'],
+                'volume': getattr(item, 'accumulatedVolume', None),
+                'is_open': (parse_utc_str(item['timeLastUpdated']) + timedelta(minutes=5)) > datetime.now(tz_sh),
+                'time': parse_utc_str(item['timeLastTraded'])
+            })
+        except (KeyError, TypeError, IndexError):
+            continue
+    return out
 
 
 def history(_id, limit=21):

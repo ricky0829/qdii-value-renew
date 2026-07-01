@@ -1,6 +1,6 @@
 beautifulsoup4>=4.9.1
 cjkwrap==2.2
-dateparser==1.0.0
+dateparser>=1.2.0
 demjson3>=3.0.0
 python-dateutil>=2.8.1
 inquirer==3.4.0
@@ -8,6 +8,7 @@ lxml>=4.6.1
 pytz>=2018.9
 requests>=2.21.0
 rich==9.5.1
+STPyV8>=13.1
 tzlocal>=2.1
 wcwidth==0.2.5
 xlrd==2.0.1

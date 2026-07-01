@@ -1,6 +1,11 @@
-from . import investing_interface, sina_interface, yahootw_interface, gfinance_interface, msn_interface
+from . import investing_interface, sina_interface, yahootw_interface, gfinance_interface, msn_interface, inland_direct_interface
 
 EQUITY_PROVIDER = [
+    {
+        'id': 'inland_direct',
+        'name': '内陆直通源（sina 港股 + eastmoney 全市场 + msn 全球）',
+        'object': inland_direct_interface
+    },
     {
         'id': 'sina',
         'name': '新浪财经（A/H/美）',

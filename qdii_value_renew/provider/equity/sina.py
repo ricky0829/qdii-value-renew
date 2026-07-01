@@ -233,7 +233,7 @@ def history_cnhk(url, code, limit=21):
         compressed = __session.get(url.format(code), headers=headers).text.split('\n')[0].split('\"')[1]
         ret = json.loads(decompress(compressed))
         return [{
-            'date': datetime.fromtimestamp(int(i['date'] // 1000), tz=tz_sh).strftime('%Y-%m-%d'),
+            'date': i['date'] if isinstance(i['date'], str) else datetime.fromtimestamp(int(i['date']) // 1000, tz=tz_sh).strftime('%Y-%m-%d'),
             'open': TO_FIX_2(i['open']),
             'high': TO_FIX_2(i['high']),
             'low': TO_FIX_2(i['low']),

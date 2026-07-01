@@ -55,7 +55,8 @@ def combine_summary(d, equities_percent):
     latest = max([e['time'] for e in equities])
     last_day = get_trade_day(latest) - timedelta(days=3 if latest.weekday() == 0 else 1)
     for e in equities:
-        e['weight'] = Decimal(e['weight'])
+        e['weight'] = Decimal(str(e['weight']))
+        e['change_percent'] = Decimal(str(e['change_percent']))
         e['is_today'] = e['time'] > trade_today
         e['is_past'] = e['time'] < last_day
     equities.sort(key=lambda e: e['weight'], reverse=True)
