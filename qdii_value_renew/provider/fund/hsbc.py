@@ -37,12 +37,20 @@ def clean_name(name):
       → 'KNOWLEDGE ATLAS TECHNOLOGY'
       'ZHONGJI INNOLIGHT CO LTD SZHK ORD CNY1.000000000'
       → 'ZHONGJI INNOLIGHT'
+      'TDK CORPORATION'
+      → 'TDK CORPORATION'  （去掉 CORPORATION 后只剩 TDK 太短，保留）
     """
     s = name
     s = re.sub(r'\bSZHK\b', '', s, flags=re.IGNORECASE)
     s = re.sub(r'\b(CNY|KRW|USD|JPY|TWD|SGD|AUD|HKD)\s*\d*\.?\d*', '', s, flags=re.IGNORECASE)
     s = re.sub(r'\b(ORD|SHS|NPV|JSC)\b', '', s, flags=re.IGNORECASE)
-    s = re.sub(r'\b(CO LTD|LTD|INC|CORP|CORPORATION|CO\.)\b\.?', '', s, flags=re.IGNORECASE)
+    # 先去掉公司后缀，但如果去掉后核心名太短（<=3字符），则保留后缀
+    core = re.sub(r'\b(CO LTD|LTD|INC|CORP|CORPORATION|CO\.)\b\.?', '', s, flags=re.IGNORECASE)
+    core = re.sub(r'\s+', ' ', core).strip()
+    core = re.sub(r'\s+[A-Z]$', '', core).strip()
+    if len(core) > 3:
+        s = core
+    # 否则保留 s 不动（如 TDK CORPORATION）
     s = re.sub(r'\s*-\s*[A-Z]{1,3}\s*', ' ', s)
     s = re.sub(r'\s+', ' ', s).strip()
     s = re.sub(r'\s+[A-Z]$', '', s).strip()

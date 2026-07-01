@@ -66,8 +66,12 @@ class UpdateEquityState(State):
             keys = [x for x in key_text.keys() if x in item.keys()]
             print('\n' + '  '.join(list(map(lambda k: key_text[k] + ': ' + str(item[k]), keys))))
             short_code = item['code'].split('.')[0].split(':')[0] if 'code' in item.keys() else None
-            name_splits = ['COMPANY', 'CORPORATION', 'LIMITED', 'CO.', 'CO', 'LTD', 'INC', 'ORD']
-            short_name = strQ2B(remove_suffix_words(item['name'], name_splits))
+            # 优先使用 cleaned_name（HSBC 已清洗），否则回退到简单后缀裁剪
+            if item.get('cleaned_name'):
+                short_name = strQ2B(item['cleaned_name'])
+            else:
+                name_splits = ['COMPANY', 'CORPORATION', 'LIMITED', 'CO.', 'CO', 'LTD', 'INC', 'ORD']
+                short_name = strQ2B(remove_suffix_words(item['name'], name_splits))
             exist_item = []
             if OLD_FUND_CONF is not None:
                 exist_item = list(filter(lambda i: i['code'] == short_code or i['name'] == short_name, OLD_FUND_CONF.data['equities']))
@@ -80,7 +84,7 @@ class UpdateEquityState(State):
                 })
                 clear_line()
                 continue
-            ret = search_equity(short_code or short_name)
+            ret = search_equity(short_name)
             if ret is None:
                 continue
             item.update(ret)
