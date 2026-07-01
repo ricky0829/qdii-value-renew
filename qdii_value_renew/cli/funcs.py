@@ -160,8 +160,14 @@ def _get_emoji_from_source_id(source_id):
 
 def add_region_emoji(equities):
     """为持仓列表中每个条目在 name 前添加地区旗帜 emoji。
-    优先级： location 字段 > source_id 交易所推断
+    优先级： location 字段 > market 字段 > source_id 交易所推断
     """
+    # market 代码 → emoji 映射
+    MARKET_EMOJI = {
+        'CN': '🇨🇳', 'HK': '🇭🇰', 'TW': '🇹🇼', 'JP': '🇯🇵',
+        'KR': '🇰🇷', 'IN': '🇮🇳', 'SG': '🇸🇬', 'AU': '🇦🇺',
+        'US': '🇺🇸', 'GB': '🇬🇧', 'DE': '🇩🇪', 'FR': '🇫🇷',
+    }
     for e in equities:
         name = e.get('name', '')
         if not name:
@@ -179,7 +185,12 @@ def add_region_emoji(equities):
         location = e.get('location', '').strip()
         if location:
             emoji = REGION_EMOJI.get(location)
-        # 2. 备用：从 source_id 交易所推断
+        # 2. 从 market 字段匹配（HSBC 提供的市场代码）
+        if not emoji:
+            market = e.get('market', '').strip()
+            if market:
+                emoji = MARKET_EMOJI.get(market)
+        # 3. 备用：从 source_id 交易所推断
         if not emoji:
             emoji = _get_emoji_from_source_id(e.get('source_id', ''))
         if emoji:
