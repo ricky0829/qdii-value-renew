@@ -251,8 +251,43 @@ def get_fund(_id, provider):
     return None
 
 
-def search_equity(default_query=None):
+def search_equity(default_query=None, market=None):
+    """搜索股票。market 为 HSBC 提供的市场代码（CN/HK/TW/JP/KR 等），
+    传入后会将匹配市场的结果排到前面。"""
     global EQUITY_PROVIDER, CUR_EQ_PROVIDER
+
+    # market 代码 → 搜索结果 type 字段中的关键词
+    MARKET_TYPE_KEYWORDS = {
+        'CN': ['沪A', '深A', '京A', 'SH-A', 'SZ-A', 'China', 'Shanghai', 'Shenzhen'],
+        'HK': ['港股', 'Hong Kong', 'HKG'],
+        'TW': ['台湾', 'Taiwan', 'TPE', 'TWSE'],
+        'JP': ['东京', 'Japan', 'Tokyo', 'TYO', 'TSE'],
+        'KR': ['韩国', 'Korea', 'KRX', 'KOSPI'],
+        'US': ['NYSE', 'NASDAQ', 'AMEX', 'OTC', 'United States'],
+        'GB': ['伦敦', 'London', 'LON', 'LSE', 'United Kingdom'],
+        'IN': ['印度', 'India', 'NSE', 'BSE'],
+        'SG': ['新加坡', 'Singapore', 'SGX'],
+        'AU': ['澳大利亚', 'Australia', 'ASX'],
+    }
+
+    def _market_score(r):
+        """搜索结果与目标市场的匹配度，越高越优先。"""
+        if not market:
+            return 0
+        rtype = (r.get('type') or '').lower()
+        keywords = MARKET_TYPE_KEYWORDS.get(market, [])
+        for kw in keywords:
+            if kw.lower() in rtype:
+                return 100
+        # 东方财富 source_id 前缀判断
+        sid = r.get('source_id', '')
+        if '.' in sid and sid.split('.')[0].isdigit():
+            prefix = sid.split('.')[0]
+            EM_MARKET_PREFIX = {'CN': ['1', '0'], 'HK': ['116', '115']}
+            if market in EM_MARKET_PREFIX and prefix in EM_MARKET_PREFIX[market]:
+                return 100
+        return 0
+
     data = None
     while data is None:
         default_info = f', 默认: {default_query}' if default_query else ''
@@ -276,6 +311,9 @@ def search_equity(default_query=None):
             if search_res is None or len(search_res) == 0:
                 print('未搜索到结果.')
                 continue
+            # 按市场匹配度排序：匹配市场的排前面
+            if market:
+                search_res = sorted(search_res, key=lambda r: _market_score(r), reverse=True)
             options = [(f"{r['type']} | {r['name']} ({r['code']})", r) for r in search_res[:10]]
             options.append(('重新搜索', None))
             data = inquirer.list_input('上下键选择对应的项目', choices=options, default=0, render=INQUIRER_RENDER)

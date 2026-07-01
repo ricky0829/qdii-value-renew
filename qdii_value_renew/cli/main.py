@@ -84,7 +84,7 @@ class UpdateEquityState(State):
                 })
                 clear_line()
                 continue
-            ret = search_equity(short_name)
+            ret = search_equity(short_name, market=item.get('market'))
             if ret is None:
                 continue
             item.update(ret)
